@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wenku8_theme_name">Wenku8 · 閱讀檔案</string>
+    <string name="wenku8_drawer_layout">抽屜式</string>
+    <string name="wenku8_open_groups">開啟書架分欄</string>
+    <string name="wenku8_restore_navigation">顯示導覽列</string>
+    <string name="wenku8_dock_summary">Wenku8 玻璃導覽列 · 拖曳預覽，放開切換頁面。</string>
+    <string name="wenku8_shelf_3d">立體檔案書架</string>
+    <string name="wenku8_previous_book">上一本書</string>
+    <string name="wenku8_next_book">下一本書</string>
+    <string name="wenku8_empty_archive">暫無檔案</string>
+    <string name="wenku8_reduced_effects">輕量效果</string>
+    <string name="wenku8_reduced_effects_summary">關閉折射、紙片動畫與立體顯示，保留書架佈局偏好。</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wenku8_archive_shelf_book_count">3D shelf book limit</string>
+    <string name="wenku8_archive_shelf_book_count_summary">Show up to this many books from the current sort order. The list below keeps all books.</string>
+</resources>

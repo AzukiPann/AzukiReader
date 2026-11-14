@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookmark_excerpt_title">摘录书签</string>
+    <string name="bookmark_excerpt_save">保存摘录</string>
+    <string name="bookmark_excerpt_hint">长按正文选中文字，拖动两端调整范围，选好后点击保存。</string>
+    <string name="bookmark_excerpt_count">已选 %1$d 字</string>
+    <string name="bookmark_excerpt_one_page">当前页</string>
+    <string name="bookmark_excerpt_two_pages">当前页 + 下一页</string>
+    <string name="bookmark_excerpt_body">可选取的正文</string>
+    <string name="bookmark_excerpt_note">添加笔记（可选）</string>
+    <string name="bookmark_excerpt_saved">查看已有摘录（%1$d）</string>
+    <string name="bookmark_excerpt_empty">当前页面没有可摘录的正文。</string>
+</resources>

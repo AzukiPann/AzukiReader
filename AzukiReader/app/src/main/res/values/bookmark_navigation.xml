@@ -1,0 +1,8 @@
+<resources>
+    <string name="wenku8_bookmarks_code" translatable="false">BOOKMARK ARCHIVE</string>
+    <string name="excerpts_export_all">导出全部摘录为 Markdown</string>
+    <string name="excerpts_exporting">正在导出全部摘录</string>
+    <string name="excerpts_export_success">已导出 %1$d 条摘录到 Markdown 文件</string>
+    <string name="excerpts_export_failed">摘录导出失败，请重新选择保存位置后重试</string>
+    <string name="reader_view_bookmarks">查看本书书签</string>
+</resources>

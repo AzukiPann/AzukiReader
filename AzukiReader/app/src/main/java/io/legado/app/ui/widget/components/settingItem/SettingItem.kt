@@ -1,0 +1,292 @@
+package io.legado.app.ui.widget.components.settingItem
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import io.legado.app.core.designsystem.wenku8.effects.wenku8Press
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.itos.coui.effect.couiButtonFeedback
+import com.itos.coui.layout.CouiPageDefaults
+import com.itos.coui.layout.Item as CouiItem
+import com.itos.coui.text.CouiTextKind
+import com.itos.coui.text.rememberCouiTextStyle
+import io.legado.app.ui.theme.LegadoTheme
+import io.legado.app.ui.theme.ComposeEngine
+import io.legado.app.ui.widget.components.LocalMochiSettingsGroup
+import io.legado.app.ui.widget.components.LocalCouiSettingsGroup
+import io.legado.app.ui.widget.components.card.SettingCard
+import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
+import io.legado.app.ui.widget.components.text.AppText
+import ui.feice.mochi.list.mochiListDivider
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SettingItem(
+    modifier: Modifier = Modifier,
+    painter: Painter? = null,
+    imageVector: ImageVector? = null,
+    color: Color? = null,
+    cornerRadius: androidx.compose.ui.unit.Dp = 4.dp,
+    title: String,
+    description: String? = null,
+    option: String? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    dropdownMenu: (@Composable (onDismiss: () -> Unit) -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    semanticRole: Role? = null,
+    semanticStateDescription: String? = null,
+    semanticToggleState: Boolean? = null,
+    expanded: Boolean = false,
+    onExpandChange: ((Boolean) -> Unit)? = null,
+    expandContent: (@Composable ColumnScope.() -> Unit)? = null
+) {
+
+    var showMenu by remember { mutableStateOf(false) }
+    val isExpandable = expandContent != null && onExpandChange != null
+    val mochiGrouped = LocalMochiSettingsGroup.current
+    val isCoui = LegadoTheme.composeEngine == ComposeEngine.Coui
+    val grouped = mochiGrouped || (isCoui && LocalCouiSettingsGroup.current != null)
+    val couiColors = if (isCoui) CouiPageDefaults.themeColors() else null
+    val trailingOption = option.takeIf { isCoui && trailingContent == null && !isExpandable }
+    val useOptionAnchor = LegadoTheme.composeEngine == ComposeEngine.Mochi &&
+        dropdownMenu != null && trailingContent == null && option != null
+    val menu: @Composable () -> Unit = {
+        dropdownMenu?.let {
+            RoundDropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                mochiAnchorMaxWidth = 48.dp,
+                content = { dismiss -> it(dismiss) },
+            )
+        }
+    }
+    val hasAction = onClick != null || onLongClick != null || dropdownMenu != null || isExpandable
+    val interactionSource = if ((isCoui || LegadoTheme.isWenku8) && hasAction) remember { MutableInteractionSource() } else null
+    val rowModifier = Modifier
+        .semantics(mergeDescendants = !isCoui || hasAction) {
+            semanticRole?.let { role = it }
+            semanticStateDescription?.let { stateDescription = it }
+            semanticToggleState?.let {
+                toggleableState = if (it) ToggleableState.On else ToggleableState.Off
+            }
+            if (!enabled) disabled()
+        }
+        .then(if (isCoui && interactionSource != null) {
+            Modifier.couiButtonFeedback(interactionSource = interactionSource, enabled = enabled, list = true)
+        } else Modifier)
+        .then(if (!isCoui || hasAction) {
+            Modifier.combinedClickable(
+                interactionSource = interactionSource,
+                indication = if (isCoui || LegadoTheme.isWenku8) null else LocalIndication.current,
+                enabled = enabled,
+                role = semanticRole,
+                onClick = {
+                    when {
+                        dropdownMenu != null -> showMenu = true
+                        isExpandable -> onExpandChange.invoke(!expanded)
+                        else -> onClick?.invoke()
+                    }
+                },
+                onLongClick = if (!isCoui || dropdownMenu != null || onLongClick != null) {
+                    {
+                        if (dropdownMenu != null) showMenu = true
+                        onLongClick?.invoke()
+                    }
+                } else null,
+            )
+        } else Modifier)
+    val leading: (@Composable () -> Unit)? = if (painter != null || imageVector != null) {
+        {
+            val tint = if (couiColors != null) {
+                if (enabled) couiColors.summary else couiColors.disabled
+            } else MaterialTheme.colorScheme.onSurfaceVariant
+            if (painter != null) {
+                Icon(painter = painter, contentDescription = null, tint = tint,
+                    modifier = if (LegadoTheme.isWenku8) Modifier.size(21.dp) else Modifier)
+            } else if (imageVector != null) {
+                Icon(imageVector = imageVector, contentDescription = null, tint = tint,
+                    modifier = if (LegadoTheme.isWenku8) Modifier.size(21.dp) else Modifier)
+            }
+        }
+    } else null
+    val supporting: (@Composable () -> Unit)? = if (description != null || option != null && trailingOption == null) {
+        {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                description?.let {
+                    AppText(
+                        it,
+                        style = if (LegadoTheme.isWenku8) MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 19.sp)
+                        else if (isCoui) rememberCouiTextStyle(CouiTextKind.PreferenceSummary)
+                        else LegadoTheme.typography.bodySmallEmphasized,
+                        fontFamily = if (isCoui) LegadoTheme.typography.bodySmallEmphasized.fontFamily else null,
+                        color = if (couiColors != null) {
+                            if (enabled) couiColors.summary else couiColors.disabled
+                        } else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    )
+                }
+                if (option != null && trailingOption == null) {
+                    Box {
+                        AppText(
+                            option,
+                            style = LegadoTheme.typography.labelMediumEmphasized,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        if (useOptionAnchor) menu()
+                    }
+                }
+            }
+        }
+    } else null
+    val trailing: @Composable () -> Unit = {
+        Box(contentAlignment = Alignment.Center) {
+            if (isExpandable && trailingContent == null) {
+                val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "arrow")
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.rotate(rotation),
+                )
+            } else if (trailingOption != null && couiColors != null) {
+                AppText(
+                    text = trailingOption,
+                    modifier = Modifier.widthIn(max = 162.dp),
+                    style = rememberCouiTextStyle(CouiTextKind.PreferenceValue),
+                    fontFamily = LegadoTheme.typography.labelMediumEmphasized.fontFamily,
+                    color = if (enabled) couiColors.summary else couiColors.disabled,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                trailingContent?.invoke()
+            }
+            if (!useOptionAnchor) menu()
+        }
+    }
+    val titleContent: @Composable () -> Unit = {
+        AppText(
+            text = title,
+            style = if (LegadoTheme.isWenku8) MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold)
+            else if (isCoui) rememberCouiTextStyle(CouiTextKind.PreferenceTitle)
+            else LegadoTheme.typography.titleMedium,
+            fontFamily = if (isCoui) LegadoTheme.typography.titleMedium.fontFamily else null,
+            color = if (couiColors != null) {
+                if (enabled) couiColors.title else couiColors.disabled
+            } else Color.Unspecified,
+        )
+    }
+
+    SettingCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (LegadoTheme.isWenku8 && interactionSource != null) Modifier.wenku8Press(interactionSource) else Modifier)
+            .then(
+                if (mochiGrouped) Modifier.mochiListDivider(if (painter != null || imageVector != null) 56.dp else 16.dp)
+                else Modifier
+            ),
+        cornerRadius = cornerRadius,
+        colors = CardDefaults.cardColors(
+            containerColor = color ?: if (LegadoTheme.isWenku8) MaterialTheme.colorScheme.surface
+                else if (grouped) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+    ) {
+        Column {
+            if (LegadoTheme.isWenku8) {
+                Row(
+                    rowModifier.fillMaxWidth().heightIn(min = 56.dp)
+                        .alpha(if (enabled) 1f else .45f).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    leading?.let { it(); Spacer(Modifier.width(12.dp)) }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        titleContent()
+                        supporting?.invoke()
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    trailing()
+                }
+            } else if (isCoui) {
+                CouiItem(
+                    modifier = rowModifier,
+                    icon = leading,
+                    summary = supporting,
+                    trailing = trailing,
+                    enabled = enabled,
+                    title = titleContent,
+                )
+            } else {
+                ListItem(
+                    modifier = rowModifier,
+                    leadingContent = leading,
+                    supportingContent = supporting,
+                    trailingContent = trailing,
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = titleContent,
+                )
+            }
+
+            if (isExpandable) {
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically(expandFrom = Alignment.Top),
+                    exit = shrinkVertically(shrinkTowards = Alignment.Top)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 8.dp)
+                    ) {
+                        expandContent.invoke(this)
+                    }
+                }
+            }
+        }
+    }
+}

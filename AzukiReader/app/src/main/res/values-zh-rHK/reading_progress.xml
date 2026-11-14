@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reading_furthest_progress">最高：%1$s（%2$s）· 章內 %3$s</string>
+    <string name="reading_current_progress">目前：第 %1$d 章 · 章內 %2$s</string>
+    <string name="reading_progress_unknown">進度未知</string>
+    <string name="reading_current_label">目前：</string>
+    <string name="reading_highest_label">最高：</string>
+    <string name="reading_position_value">%1$s（%2$s）· 章內 %3$s</string>
+</resources>

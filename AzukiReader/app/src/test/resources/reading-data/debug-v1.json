@@ -1,0 +1,8 @@
+{
+  "format": "Azuk1P4N.reading-data",
+  "version": 1,
+  "timeZone": "Asia/Shanghai",
+  "records": [{"deviceId":"debug-device","bookName":"示例书","bookAuthor":"作者","readTime":60000,"lastRead":1794441660000}],
+  "details": [{"deviceId":"debug-device","bookName":"示例书","bookAuthor":"作者","date":"2026-11-12","readTime":60000,"readWords":0,"firstReadTime":1794441600000,"lastReadTime":1794441660000}],
+  "sessions": [{"id":0,"deviceId":"debug-device","bookName":"示例书","bookAuthor":"作者","bookUrl":"content://io.legato.kazusa.debug/books/copy-a","startTime":1794441600000,"endTime":1794441660000,"words":17}]
+}

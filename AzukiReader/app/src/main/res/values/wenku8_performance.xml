@@ -1,0 +1,31 @@
+<resources>
+    <string name="wenku8_performance_title">性能与动效</string>
+    <string name="wenku8_navigation_visibility">导航栏显示</string>
+    <string name="wenku8_show_discovery">显示发现</string>
+    <string name="wenku8_show_rss">显示订阅</string>
+    <string name="wenku8_glass_appearance">玻璃外观</string>
+    <string name="wenku8_glass_preview">玻璃预览</string>
+    <string name="wenku8_glass_blur">模糊强度</string>
+    <string name="wenku8_glass_opacity">不透明度</string>
+    <string name="wenku8_reset_glass">恢复默认玻璃外观</string>
+    <string name="wenku8_reduce_motion">减少动态效果</string>
+    <string name="wenku8_refresh_rate">屏幕刷新率</string>
+    <string name="reader_refresh_rate">阅读界面刷新率</string>
+    <string name="reader_refresh_summary">仅在阅读正文时生效，默认30 Hz；退出阅读后恢复屏幕刷新率设置。设备未开放对应模式时提交刷新率请求，实际由系统决定。</string>
+    <string name="wenku8_refresh_current">当前屏幕：%1$.1f Hz</string>
+    <string name="wenku8_refresh_auto">自动（最高刷新率）</string>
+    <string name="wenku8_refresh_system">交由系统调度</string>
+    <string name="wenku8_refresh_unavailable">暂时无法读取屏幕信息，返回此页面后重试</string>
+    <string name="wenku8_refresh_saved_unavailable">%1$d Hz（当前屏幕不支持）</string>
+    <string name="wenku8_refresh_system_limit">设置为刷新率请求；实际表现仍受系统、省电模式和温控限制。</string>
+    <string name="wenku8_low_performance">低性能设备模式</string>
+    <string name="wenku8_low_performance_summary">启用后使用轻量预设，可单独保留下列效果。关闭后恢复原有外观与动效设置。</string>
+    <string name="wenku8_retained_effects">保留的效果</string>
+    <string name="wenku8_effect_glass">液态玻璃折射</string>
+    <string name="wenku8_effect_blur">背景模糊</string>
+    <string name="wenku8_effect_edge">滚动边缘模糊</string>
+    <string name="wenku8_effect_motion">过渡动效</string>
+    <string name="wenku8_effect_shelf">立体书架</string>
+    <string name="wenku8_reset_lightweight">恢复轻量预设</string>
+    <string name="wenku8_save_failed">设置保存失败，请再次点击重试。</string>
+</resources>

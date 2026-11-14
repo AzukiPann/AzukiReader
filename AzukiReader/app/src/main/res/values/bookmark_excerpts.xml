@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookmark_excerpt_title">Save a passage</string>
+    <string name="bookmark_excerpt_save">Save excerpt</string>
+    <string name="bookmark_excerpt_hint">Long-press the text and drag the handles to select a passage, then save.</string>
+    <string name="bookmark_excerpt_count">%1$d characters selected</string>
+    <string name="bookmark_excerpt_one_page">Current page only</string>
+    <string name="bookmark_excerpt_two_pages">Current + next page</string>
+    <string name="bookmark_excerpt_body">Selectable book text</string>
+    <string name="bookmark_excerpt_note">Add a note (optional)</string>
+    <string name="bookmark_excerpt_saved">View saved excerpts (%1$d)</string>
+    <string name="bookmark_excerpt_empty">No text is available on this page.</string>
+</resources>
