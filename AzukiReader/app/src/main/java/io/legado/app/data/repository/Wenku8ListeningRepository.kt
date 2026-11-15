@@ -123,14 +123,7 @@ class Wenku8ListeningRepository(
             speed = if (selectedSource in setOf("edge","custom")) prefs.wenku8Speed else (prefs.ttsSpeechRate+5)/10f,
             follow = session.followReadAloudPosition, timerMinutes = session.timerMinutes,
             sleepAfterChapter = session.timerChapters > 0,
-            voices = source.voices.filter { voice ->
-                when (selectedSource) {
-                    "edge" -> voice.engineId == EDGE
-                    "custom" -> voice.engineId == CUSTOM
-                    "system" -> voice.engineType == ReadAloudVoice.ENGINE_SYSTEM
-                    else -> voice.engineId != EDGE && voice.engineId != CUSTOM
-                }
-            }.map { ListeningVoice(it.id,it.name,selectedSource,it.isSelected) }.toImmutableList(),
+            voices = source.voices.map { ListeningVoice(it.id,it.name,it.engineName,it.isSelected) }.toImmutableList(),
             resumeChapter = cursor?.optInt("chapter")?.takeIf { it >= 0 },
         )
     }.combine(engines.observeAll()) { state, all ->
@@ -193,6 +186,8 @@ class Wenku8ListeningRepository(
             else -> id
         }
         val voice = voices.getVoice(actualId) ?: error("音色已不再可用，请刷新列表")
+        require(voice.enabled && voice.available && !voice.excluded) { "音色已停用或不可用，请重新选择" }
+        settings.update { it.copy(ttsFollowSys = false, useMultiSpeaker = false) }
         if (voice.engineId in setOf(EDGE,CUSTOM)) settings.update { it.copy(useMultiSpeaker=false,bgmAssign=false,multiRoleCast=false,
             contentSplitMode="paragraph",readAloudByPage=false,ttsParagraphInterval=0,ttsFollowSys=false,mediaButtonPerNext=true,keepReadAloudOnExit=true,ignoreAudioFocus=false) }
         coordinator.selectVoice(actualId)

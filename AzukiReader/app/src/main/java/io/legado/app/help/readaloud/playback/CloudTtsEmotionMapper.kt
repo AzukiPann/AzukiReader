@@ -10,6 +10,7 @@ object CloudTtsEmotionMapper {
         val emotion = SpeechEmotion.fromStorage(emotionValue)
         if (emotion == SpeechEmotion.Neutral) return CloudTtsEmotionControl()
         return when (provider) {
+            CloudTtsProviderType.DeepSeek -> CloudTtsEmotionControl()
             CloudTtsProviderType.Wenku8Edge,
             CloudTtsProviderType.Wenku8Ssml -> CloudTtsEmotionControl()
             CloudTtsProviderType.OpenAiSpeech,

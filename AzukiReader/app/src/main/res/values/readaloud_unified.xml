@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="aloud_unified_hint">设置与阅读器共用同一音色。点击音色即可使用，试听只播放示例，不改变选择。</string>
+    <string name="aloud_unified_manage">管理引擎与音色</string>
+    <string name="aloud_unified_current">正在使用</string>
+    <string name="aloud_unified_applied">已应用音色，设置与阅读器同步生效</string>
+    <string name="aloud_unified_advanced">进阶朗读设置</string>
+    <string name="aloud_unified_delete_engine">确认删除引擎？</string>
+    <string name="aloud_unified_delete_message">删除“%1$s”及关联音色？如正在使用，将回到系统朗读。此操作无法撤销。</string>
+    <string name="aloud_deepseek_hint">DeepSeek 自动识别语种，支持海星女声与暗潮男声，输出 WAV。无需模型参数；不支持合成语速、音调或情感参数，播放倍速请在朗读主面板调整。</string>
+</resources>

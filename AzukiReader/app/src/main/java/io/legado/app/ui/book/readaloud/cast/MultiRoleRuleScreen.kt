@@ -36,79 +36,10 @@ fun MultiRoleRuleRouteScreen(
     onNavigateToCapsuleStyle: () -> Unit,
     onNavigateToRegexCast: () -> Unit,
 ) {
-    val scrollBehavior = GlassTopAppBarDefaults.defaultScrollBehavior()
-    AppScaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        // Miuix 引擎分支不套 contentColor，隐式 LocalContentColor 会落到 Unspecified → 深色下文字发黑
-        contentColor = LegadoTheme.colorScheme.onSurface,
-        topBar = {
-            GlassMediumFlexibleTopAppBar(
-                title = stringResource(R.string.aloud_config),
-                scrollBehavior = scrollBehavior,
-                navigationIcon = { TopBarNavigationButton(onClick = onBackClick) },
-            )
-        },
-    ) { paddingValues ->
-        SearchableSettingsList(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = adaptiveContentPadding(
-                top = paddingValues.calculateTopPadding(),
-                bottom = 120.dp,
-            ),
-        ) {
-            item {
-                SplicedColumnGroup {
-                    SearchableSetting("aloud.cast_voice_pool") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.cast_voice_pool),
-                            description = stringResource(R.string.cast_voice_pool_summary),
-                            onClick = onNavigateToVoicePool,
-                        )
-                    }
-                    SearchableSetting("aloud.cast_bgm_pool") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.cast_bgm_pool),
-                            description = stringResource(R.string.cast_bgm_pool_summary),
-                            onClick = onNavigateToBgmPool,
-                        )
-                    }
-                    SearchableSetting("aloud.voice_effect") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.voice_effect),
-                            description = stringResource(R.string.voice_effect_hub_summary),
-                            onClick = onNavigateToVoiceEffect,
-                        )
-                    }
-                    SearchableSetting("aloud.capsule_style_title") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.capsule_style_title),
-                            description = stringResource(R.string.capsule_style_hub_summary),
-                            onClick = onNavigateToCapsuleStyle,
-                        )
-                    }
-                    SearchableSetting("aloud.read_aloud_engines_and_voices") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.read_aloud_engines_and_voices),
-                            description = stringResource(R.string.cast_tts_engines_summary),
-                            onClick = onNavigateToEngines,
-                        )
-                    }
-                    SearchableSetting("aloud.multi_role_recognition") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.multi_role_recognition),
-                            description = stringResource(R.string.multi_role_recognition_summary),
-                            onClick = onNavigateToRecognition,
-                        )
-                    }
-                    SearchableSetting("aloud.regex_cast_rule") {
-                        ClickableSettingItem(
-                            title = stringResource(R.string.regex_cast_rule),
-                            description = stringResource(R.string.regex_cast_rule_summary),
-                            onClick = onNavigateToRegexCast,
-                        )
-                    }
-                }
-            }
-        }
-    }
+    io.legado.app.feature.readaloud.settings.UnifiedReadAloudSettingsScreen(
+        onBack = onBackClick, onEngines = onNavigateToEngines,
+        onVoicePool = onNavigateToVoicePool, onBgmPool = onNavigateToBgmPool,
+        onVoiceEffect = onNavigateToVoiceEffect, onCapsuleStyle = onNavigateToCapsuleStyle,
+        onRecognition = onNavigateToRecognition, onRegexCast = onNavigateToRegexCast,
+    )
 }

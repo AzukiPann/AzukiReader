@@ -17,6 +17,7 @@ data class CloudTtsEngine(
 )
 
 enum class CloudTtsProviderType(val storageValue: String) {
+    DeepSeek("deepseek"),
     Wenku8Edge("wenku8_edge"),
     Wenku8Ssml("wenku8_ssml"),
     OpenAiSpeech("openai_speech"),
@@ -52,6 +53,9 @@ enum class CloudTtsVoiceCatalogType {
 
 val CloudTtsProviderType.profile: CloudTtsProviderProfile
     get() = when (this) {
+        CloudTtsProviderType.DeepSeek -> CloudTtsProviderProfile(
+            displayName = "DeepSeek 语音", audioFormats = listOf("wav"),
+        )
         CloudTtsProviderType.Wenku8Edge -> CloudTtsProviderProfile(
             displayName = "自然在线", voiceCatalogType = CloudTtsVoiceCatalogType.Remote,
         )

@@ -20,6 +20,7 @@ internal interface CloudTtsProvider {
 
 internal class CloudTtsProviderRegistry(
     providers: List<CloudTtsProvider> = listOf(
+        DeepSeekCloudTtsProvider(),
         Wenku8EdgeTtsProvider(),
         Wenku8SsmlTtsProvider(),
         OpenAiCloudTtsProvider(),

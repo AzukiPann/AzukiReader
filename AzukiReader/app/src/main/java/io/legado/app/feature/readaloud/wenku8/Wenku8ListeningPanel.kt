@@ -41,7 +41,6 @@ fun Wenku8ListeningRoute(reader:Boolean, onDismiss:()->Unit, onOfflineSettings:(
     val vm:Wenku8ListeningViewModel=koinViewModel(key="wenku8-listening-$reader",parameters={parametersOf(reader)})
     val state by vm.uiState.collectAsStateWithLifecycle()
     Wenku8ListeningPanel(state,vm::onIntent,onDismiss,onOfflineSettings,modifier,reader,showHeader)
-    if(state.customOpen) ListeningCustomSheet(state,vm::onIntent)
     DisposableEffect(Unit) { onDispose { vm.onIntent(ListeningIntent.StopPreview) } }
 }
 
@@ -113,10 +112,8 @@ fun Wenku8ListeningPanel(state:ListeningUiState,onIntent:(ListeningIntent)->Unit
             item("voice") {
                 ListeningCard {
                     Text(stringResource(R.string.w8_listening_voices),fontSize=14.sp,fontWeight=FontWeight.SemiBold)
-                    FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        for(source in listOf("edge","system","custom")) FilterChip(p.source==source,{onIntent(ListeningIntent.Source(source))},{Text(sourceName(source))})
-                    }
-                    Text(stringResource(if(p.source=="custom")R.string.w8_listening_custom_hint else if(p.source=="system")R.string.w8_listening_offline_hint else R.string.w8_listening_online_hint),fontSize=12.sp,lineHeight=19.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.aloud_unified_hint), fontSize=12.sp,
+                        lineHeight=19.sp, color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(p.voices.isNotEmpty()) Box {
                         OutlinedButton(onClick={voiceMenu=true},modifier=Modifier.fillMaxWidth().testTag("listening-voice-picker")) {
                             Text(p.voiceLabel,Modifier.weight(1f),maxLines=1,overflow=TextOverflow.Ellipsis)
@@ -124,20 +121,19 @@ fun Wenku8ListeningPanel(state:ListeningUiState,onIntent:(ListeningIntent)->Unit
                         }
                         DropdownMenu(voiceMenu,{voiceMenu=false},modifier=Modifier.heightIn(max=280.dp)) {
                             p.voices.forEach { voice -> DropdownMenuItem(
-                                text={Text(voice.name)},
+                                text={Text("${voice.name} · ${voice.source}")},
                                 leadingIcon={RadioButton(voice.selected,null)},
                                 modifier=Modifier.semantics { selected=voice.selected; role=Role.RadioButton },
                                 onClick={voiceMenu=false;onIntent(ListeningIntent.Voice(voice.id))}) }
                         }
                     }
-                    if(p.source=="system") OutlinedButton(onClick=onOfflineSettings,modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.w8_listening_offline_settings))}
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                        if(p.source=="custom") TextButton(onClick={onIntent(ListeningIntent.OpenCustom)}) {Text(stringResource(R.string.w8_listening_custom_config))}
-                        if(p.source=="edge") TextButton(enabled=!state.busy,onClick={onIntent(ListeningIntent.Refresh)}) {
-                            Icon(Icons.Default.Refresh,null,Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))
-                            Text(stringResource(if(state.busy)R.string.w8_listening_refreshing else R.string.w8_listening_refresh))
-                        }
+                    OutlinedButton(onClick=onOfflineSettings, modifier=Modifier.fillMaxWidth()
+                        .testTag("listening-manage-voices")) {
+                        Icon(Icons.Default.Tune, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.aloud_unified_manage))
                     }
+
                 }
             }
             item("preferences") {

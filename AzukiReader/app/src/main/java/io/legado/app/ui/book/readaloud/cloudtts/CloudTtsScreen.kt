@@ -301,8 +301,8 @@ fun CloudTtsScreen(
                 }
                 items(state.voices, key = { "voice:${it.id}" }) { voice ->
                     TinyClickableSettingItem(
-                        title = voice.title,
-                        description = voice.summary,
+                        title = if (voice.selected) "✓ ${voice.title}" else voice.title,
+                        description = if (voice.selected) stringResource(R.string.aloud_unified_current) + " · " + voice.summary else voice.summary,
                         trailingContent = {
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                 if (state.voiceBatchMode) {
@@ -325,23 +325,20 @@ fun CloudTtsScreen(
                                         contentDescription =
                                             stringResource(R.string.cloud_tts_preview_a11y),
                                     )
-                                    if (voice.deletable) {
-                                        MediumTonalButton(
-                                            onClick = {
-                                                onIntent(CloudTtsIntent.RequestAddToPool(listOf(voice.id)))
-                                            },
-                                            icon = Icons.Default.PlaylistAdd,
-                                            contentDescription =
-                                                stringResource(R.string.cloud_tts_add_to_pool),
-                                        )
-                                        MediumTonalButton(
-                                            onClick = {
-                                                onIntent(CloudTtsIntent.RequestDeleteVoice(voice.id))
-                                            },
-                                            icon = Icons.Default.Delete,
-                                            contentDescription = stringResource(R.string.delete),
-                                        )
+                                    var menu by remember(voice.id) { mutableStateOf(false) }
+                                    Box {
+                                        MediumTonalButton(onClick = { menu = true }, icon = Icons.Default.MoreVert,
+                                            contentDescription = "${voice.title} · ${stringResource(R.string.more_menu)}")
+                                        RoundDropdownMenu(menu, { menu = false }) {
+                                            if (voice.editable) RoundDropdownMenuItem(text = stringResource(R.string.edit),
+                                                onClick = { menu = false; onIntent(CloudTtsIntent.EditVoice(voice.id)) })
+                                            RoundDropdownMenuItem(text = stringResource(R.string.cloud_tts_add_to_pool),
+                                                onClick = { menu = false; onIntent(CloudTtsIntent.RequestAddToPool(listOf(voice.id))) })
+                                            if (voice.deletable) RoundDropdownMenuItem(text = stringResource(R.string.delete),
+                                                onClick = { menu = false; onIntent(CloudTtsIntent.RequestDeleteVoice(voice.id)) })
+                                        }
                                     }
+
                                 }
                             }
                         },
@@ -350,8 +347,8 @@ fun CloudTtsScreen(
                                 state.voiceBatchMode && voice.deletable ->
                                     onIntent(CloudTtsIntent.ToggleVoiceSelection(voice.id))
 
-                                !state.voiceBatchMode && voice.editable ->
-                                    onIntent(CloudTtsIntent.EditVoice(voice.id))
+                                !state.voiceBatchMode ->
+                                    onIntent(CloudTtsIntent.UseVoice(voice.id))
                             }
                         },
                     )
@@ -518,6 +515,17 @@ fun CloudTtsScreen(
         onConfirm = { onIntent(CloudTtsIntent.SaveImportedHttpTts) },
         itemTitle = { it.name },
         itemSubtitle = { it.url },
+    )
+    val deleteEngine = state.activeDialog as? CloudTtsDialog.DeleteEngine
+    AppAlertDialog(
+        show = deleteEngine != null,
+        onDismissRequest = { onIntent(CloudTtsIntent.DismissError) },
+        title = stringResource(R.string.aloud_unified_delete_engine),
+        text = deleteEngine?.let { stringResource(R.string.aloud_unified_delete_message, it.title) },
+        confirmText = stringResource(R.string.delete),
+        onConfirm = { onIntent(CloudTtsIntent.ConfirmDeleteEngine) },
+        dismissText = stringResource(R.string.cancel),
+        onDismiss = { onIntent(CloudTtsIntent.DismissError) },
     )
     val deleteVoice = state.activeDialog as? CloudTtsDialog.DeleteVoice
     AppAlertDialog(
@@ -933,7 +941,7 @@ private fun CloudTtsEngineEditorContent(
                     { update(editor.copy(baseUrl = it)) },
                     stringResource(R.string.cloud_tts_custom_base_url)
                 )
-                Field(editor.apiKey, { update(editor.copy(apiKey = it)) }, profile.apiKeyLabel)
+                Field(editor.apiKey, { update(editor.copy(apiKey = it)) }, profile.apiKeyLabel, secret = true)
                 if (provider == CloudTtsProviderType.AwsPolly) {
                     Field(
                         editor.secretKey,
@@ -978,7 +986,9 @@ private fun CloudTtsEngineEditorContent(
                 if (provider == CloudTtsProviderType.Volcengine) {
                     Field(editor.appId, { update(editor.copy(appId = it)) }, "App ID")
                 }
-                if (profile.modelOptions.isNotEmpty()) {
+                if (provider == CloudTtsProviderType.DeepSeek) {
+                    AppText(stringResource(R.string.aloud_deepseek_hint), Modifier.padding(vertical = 8.dp))
+                } else if (profile.modelOptions.isNotEmpty()) {
                     MenuButton(
                         stringResource(
                             R.string.cloud_tts_model_value,
@@ -1061,6 +1071,7 @@ private fun TtsVoicePresetEditorContent(
     val selectedEngine = state.availableEngines.firstOrNull {
         it.engineType == editor.engineType && it.engineId == editor.engineId
     }
+    val deepSeek = state.engines.firstOrNull { it.id == editor.engineId }?.summary == CloudTtsProviderType.DeepSeek.profile.displayName
     val filteredVoices = state.discoveredVoices.filter { voice ->
         voiceQuery.isBlank() || voice.label.contains(voiceQuery, ignoreCase = true) ||
             voice.id.contains(voiceQuery, ignoreCase = true)
@@ -1179,6 +1190,7 @@ private fun TtsVoicePresetEditorContent(
                                 }
                             }
                         }
+                        if (!deepSeek) {
                         Field(editor.instructions, { update(editor.copy(instructions = it)) }, stringResource(R.string.cloud_tts_instructions))
                         TinySwitchSettingItem(
                             title = stringResource(R.string.cloud_tts_automatic_emotion),
@@ -1201,6 +1213,7 @@ private fun TtsVoicePresetEditorContent(
                         Field(editor.speed, { update(editor.copy(speed = it)) }, stringResource(R.string.cloud_tts_speed))
                         Field(editor.pitch, { update(editor.copy(pitch = it)) }, stringResource(R.string.cloud_tts_pitch))
                         Field(editor.volume, { update(editor.copy(volume = it)) }, stringResource(R.string.cloud_tts_volume))
+                        } else AppText(stringResource(R.string.aloud_deepseek_hint))
                         MenuButton(stringResource(R.string.cloud_tts_audio_format, editor.format)) { formatMenu = true }
                         RoundDropdownMenu(formatMenu, { formatMenu = false }) {
                             editor.formatOptions.forEach { format ->
@@ -1231,11 +1244,12 @@ private fun TtsVoicePresetEditorContent(
 }
 
 @Composable
-private fun Field(value: String, onValueChange: (String) -> Unit, label: String) {
+private fun Field(value: String, onValueChange: (String) -> Unit, label: String, secret: Boolean = false) {
     AppTextField(
         value = value,
         onValueChange = onValueChange,
         label = label,
+        visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
     )

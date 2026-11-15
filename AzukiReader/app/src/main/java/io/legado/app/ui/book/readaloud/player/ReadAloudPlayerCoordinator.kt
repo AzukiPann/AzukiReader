@@ -151,9 +151,8 @@ class ReadAloudPlayerCoordinator(
         voiceGateway.observeVoices(),
     ) { session, (book, chapters, bindings), settings, voicesList ->
         val playback = session.playback
-        val currentEngine = (ReadAloud.bookSession.book ?: ReadBook.book)?.getTtsEngine()
-            ?: settings.ttsEngine
-        val voiceItems = mapVoiceItems(voicesList, bindings, currentEngine)
+        val currentEngine = settings.ttsEngine
+        val voiceItems = mapVoiceItems(voicesList, currentEngine)
         ReadAloudPlayerSourceState(
             bookUrl = book.bookUrl,
             bookName = book.bookName,
@@ -404,12 +403,12 @@ class ReadAloudPlayerCoordinator(
         if (bookUrl.isNotBlank()) {
             withContext(Dispatchers.IO) {
                 bookRepository.getBook(bookUrl)?.let { book ->
-                    book.setTtsEngine(engineValue)
+                    book.setTtsEngine(null)
                     bookRepository.update(book)
                 }
             }
-            ReadAloud.bookSession.book?.takeIf { it.bookUrl == bookUrl }?.setTtsEngine(engineValue)
-            ReadBook.book?.takeIf { it.bookUrl == bookUrl }?.setTtsEngine(engineValue)
+            ReadAloud.bookSession.book?.takeIf { it.bookUrl == bookUrl }?.setTtsEngine(null)
+            ReadBook.book?.takeIf { it.bookUrl == bookUrl }?.setTtsEngine(null)
             voiceGateway.upsertBinding(
                 BookVoiceBinding(
                     bookUrl = bookUrl,
@@ -443,13 +442,8 @@ class ReadAloudPlayerCoordinator(
 
     private fun mapVoiceItems(
         voicesList: List<ReadAloudVoice>,
-        bindings: List<BookVoiceBinding>,
         currentEngine: String?,
     ): ImmutableList<ReadAloudVoiceItemUi> {
-        val narratorBinding = bindings.firstOrNull {
-            it.subjectType == BookVoiceBinding.SUBJECT_NARRATOR &&
-                    it.subjectId == BookVoiceBinding.SUBJECT_NARRATOR
-        }
         // 引擎级条目（speakerId 为空）保存了引擎自己的显示名：HTTP 源导入的音色行只有
         // 类型标签，用它才能在音色列表和引擎分组里显示源名称。
         val engineDisplayNames = voicesList
@@ -465,7 +459,7 @@ class ReadAloudPlayerCoordinator(
                     ?: engineTypeLabel(voice.engineType),
                 isSelected = isReadAloudVoiceSelected(
                     voice = voice,
-                    narratorVoiceId = narratorBinding?.voiceId,
+                    narratorVoiceId = null,
                     currentEngine = currentEngine,
                 ),
                 isEngineDefault = voice.speakerId.isBlank(),

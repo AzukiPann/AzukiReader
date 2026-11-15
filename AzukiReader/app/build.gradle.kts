@@ -63,7 +63,7 @@ android {
         applicationId = "io.azukireader.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = System.getenv("COMMIT_NUMBER")?.toInt()?.let { 10000 + it } ?: 32659
+        versionCode = System.getenv("COMMIT_NUMBER")?.toInt()?.let { 10000 + it } ?: 32660
         versionName = projectVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

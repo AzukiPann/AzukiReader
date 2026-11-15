@@ -76,6 +76,7 @@ class CloudTtsViewModel(
     private val readAloudSettingsGateway: ReadAloudSettingsGateway,
     private val uploadRepository: UploadRepository,
     private val httpTtsRepository: HttpTtsRepository,
+    private val listeningGateway: io.legado.app.domain.gateway.Wenku8ListeningGateway,
 ) : ViewModel() {
 
     /** 最近一次解析出的源 → 源自带目录，按源 id 索引，保存导入时取用。 */
@@ -98,12 +99,14 @@ class CloudTtsViewModel(
 
     init {
         viewModelScope.launch {
+            listeningGateway.initialize()
             httpTtsRepository.pruneOrphanedVoices()
             combine(
                 engineGateway.observeAll(),
                 httpTtsEngineGateway.observeAll(),
                 voiceGateway.observeVoices(),
-            ) { allEngines, allHttpEngines, allVoices ->
+                readAloudSettingsGateway.settings,
+            ) { allEngines, allHttpEngines, allVoices, _ ->
                 Triple(allEngines, allHttpEngines, allVoices.filter { voice ->
                     voice.engineType in setOf(
                         ReadAloudVoice.ENGINE_CLOUD,
@@ -203,6 +206,7 @@ class CloudTtsViewModel(
                         },
                         deletable = isRemovable(voice),
                         editable = voice.managedBy == ReadAloudVoice.MANAGED_BY_USER,
+                        selected = io.legado.app.ui.book.readaloud.player.isReadAloudVoiceSelected(voice, null, readAloudSettingsGateway.currentSettings.ttsEngine),
                     )
                 }.toImmutableList(),
                 availableEngines = engineOptions(),
@@ -223,7 +227,9 @@ class CloudTtsViewModel(
                 addVoice(intent.engineType, intent.engineId)
             }
             is CloudTtsIntent.EditEngine -> editEngine(intent.id)
-            is CloudTtsIntent.DeleteEngine -> deleteEngine(intent.id)
+            is CloudTtsIntent.DeleteEngine -> requestDeleteEngine(intent.id, false)
+            CloudTtsIntent.ConfirmDeleteEngine -> confirmDeleteEngine()
+            is CloudTtsIntent.UseVoice -> useVoice(intent.id)
             is CloudTtsIntent.SetDefaultEngine -> setDefaultEngine(
                 intent.engineType,
                 intent.engineId
@@ -233,7 +239,7 @@ class CloudTtsViewModel(
             CloudTtsIntent.ApplyDefaultEngineForBook -> applyPendingDefaultEngine(forBook = true)
             is CloudTtsIntent.EditHttpTts -> editHttpTts(intent.engineId)
             is CloudTtsIntent.SaveHttpTts -> saveHttpTts(intent.value)
-            is CloudTtsIntent.DeleteHttpTts -> deleteHttpTts(intent.engineId)
+            is CloudTtsIntent.DeleteHttpTts -> requestDeleteEngine(intent.engineId, true)
             is CloudTtsIntent.OpenHttpTtsLogin -> intent.engineId.toLongOrNull()?.let {
                 _effects.tryEmit(CloudTtsEffect.OpenHttpTtsLogin(it))
             }
@@ -527,6 +533,15 @@ class CloudTtsViewModel(
     private fun saveEngine() = viewModelScope.launch {
         val engine = buildEngine() ?: return@launch
         engineGateway.upsert(engine)
+        if (engine.provider == CloudTtsProviderType.DeepSeek) {
+            synthesizer.fetchVoices(engine).forEach { item ->
+                val id = SpeechIdentity.voiceId(ReadAloudVoice.ENGINE_CLOUD, engine.id, item.id)
+                if (voiceGateway.getVoice(id) == null) voiceGateway.upsertVoice(ReadAloudVoice(
+                    id, ReadAloudVoice.ENGINE_CLOUD, engine.id, item.id, item.displayName,
+                    traitsJson = GSON.toJson(CloudTtsVoiceConfig(format = "wav")),
+                ))
+            }
+        }
         _uiState.update { it.copy(engineEditor = null) }
             toast(application.getString(R.string.cloud_tts_engine_saved))
     }
@@ -845,7 +860,7 @@ class CloudTtsViewModel(
     }.toImmutableList()
 
     private fun isDefaultEngine(engineType: String, engineId: String): Boolean {
-        val value = bookEngineValue ?: readAloudSettingsGateway.currentSettings.ttsEngine
+        val value = readAloudSettingsGateway.currentSettings.ttsEngine
         return when (engineType) {
             ReadAloudVoice.ENGINE_HTTP -> value == engineId
             ReadAloudVoice.ENGINE_CLOUD -> GSON.fromJsonObject<ReadAloudEngineSelection>(value)
@@ -888,48 +903,35 @@ class CloudTtsViewModel(
     }
 
     private fun setDefaultEngine(engineType: String, engineId: String) = viewModelScope.launch {
-        val (value, title) = when (engineType) {
-            ReadAloudVoice.ENGINE_SYSTEM -> if (engineId.isBlank()) {
-                null to application.getString(R.string.system_tts)
-            } else {
-                val name =
-                    systemEngines.firstOrNull { it.sourceId == engineId }?.displayName ?: engineId
-                GSON.toJson(SelectItem(name, engineId)) to name
-            }
-
-            ReadAloudVoice.ENGINE_HTTP -> engineId to
-                    (httpEngines.firstOrNull { it.sourceId == engineId }?.displayName ?: engineId)
-
-            ReadAloudVoice.ENGINE_CLOUD -> {
-                val voice = voices.firstOrNull {
-                    it.engineType == engineType && it.engineId == engineId && it.enabled && it.available
-                }
-                    ?: return@launch toast(application.getString(R.string.cloud_tts_default_requires_voice))
-                val name = engines.firstOrNull { it.id == engineId }?.name ?: engineId
-                GSON.toJson(
-                    ReadAloudEngineSelection(
-                        engineType = engineType,
-                        engineId = engineId,
-                        speakerId = voice.speakerId,
-                        displayName = name,
-                    )
-                ) to name
-            }
-
-            else -> return@launch
+        val voice = voices.firstOrNull {
+            it.engineType == engineType && it.engineId == engineId && it.enabled && it.available && !it.excluded
         }
-        if (bookUrl != null) {
-            _uiState.update {
-                it.copy(
-                    activeDialog = CloudTtsDialog.DefaultEngineScope(
-                        value,
-                        title
-                    )
-                )
-            }
-        } else {
-            applyDefaultEngine(value, forBook = false)
+        if (voice == null) {
+            toast(application.getString(R.string.cloud_tts_default_requires_voice))
+        } else useVoice(voice.id)
+    }
+
+    private fun useVoice(id: String) = viewModelScope.launch {
+        try {
+            listeningGateway.selectVoice(id)
+            refreshEngineSelection()
+            toast(application.getString(R.string.aloud_unified_applied))
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) { showError(formatError(error)) }
+    }
+
+    private fun requestDeleteEngine(id: String, http: Boolean) {
+        val title = if (http) httpEngines.firstOrNull { it.sourceId == id }?.displayName
+            else engines.firstOrNull { it.id == id }?.name
+        if (title != null) _uiState.update {
+            it.copy(activeDialog = CloudTtsDialog.DeleteEngine(id, title, http))
         }
+    }
+
+    private fun confirmDeleteEngine() {
+        val dialog = _uiState.value.activeDialog as? CloudTtsDialog.DeleteEngine ?: return
+        _uiState.update { it.copy(activeDialog = null) }
+        if (dialog.http) deleteHttpTts(dialog.id) else deleteEngine(dialog.id)
     }
 
     private fun setBookContext(value: String?) = viewModelScope.launch {

@@ -13,6 +13,7 @@ import io.legado.app.model.ReadAloud
 import io.legado.app.service.readaloud.ReadAloudBookSession
 import io.legado.app.support.InMemoryAppDatabaseFixture
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,6 +41,7 @@ class ReadAloudChapterStopProgressTest {
     private lateinit var book: Book
     private lateinit var databaseFixture: InMemoryAppDatabaseFixture
     private val sessionStore = ReadAloudSessionStore()
+    private val settingsGateway = TestReadAloudSettingsGateway()
     private var renderCount = 0
 
     @Before
@@ -49,7 +51,7 @@ class ReadAloudChapterStopProgressTest {
         startKoin {
             modules(module {
                 single { sessionStore }
-                single<ReadAloudSettingsGateway> { TestReadAloudSettingsGateway() }
+                single<ReadAloudSettingsGateway> { settingsGateway }
             })
         }
         setServiceFlag("isRun", false)
@@ -173,7 +175,9 @@ class ReadAloudChapterStopProgressTest {
 
     @Test
     fun wenku8OnlineChapterTimerPausesAndRetainsSessionInsteadOfStopping() {
-        book.setTtsEngine("""{"engineType":"cloud_tts","engineId":"wenku8-edge","speakerId":"zh-CN-XiaoxiaoNeural"}""")
+        runBlocking {
+            settingsGateway.update { it.copy(ttsEngine = """{"engineType":"cloud_tts","engineId":"wenku8-edge","speakerId":"zh-CN-XiaoxiaoNeural"}""") }
+        }
         ReadAloud.bookSession.adopt(ReadAloudBookSession.Snapshot(book=book,chapterIndex=5))
         setTimerField("chapterQuota", 1)
         service.finishChapter()

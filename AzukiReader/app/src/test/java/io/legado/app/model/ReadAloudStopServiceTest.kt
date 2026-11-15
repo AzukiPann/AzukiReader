@@ -58,6 +58,22 @@ class ReadAloudStopServiceTest {
     }
 
     @Test
+    fun globalEngineWinsOverLegacyBookOverrideAndUpdatesImmediately() = kotlinx.coroutines.runBlocking {
+        val field = ReadBook::class.java.getDeclaredField("book").apply { isAccessible = true }
+        val previous = field.get(null)
+        try {
+            val book = io.legado.app.data.entities.Book(bookUrl = "unified-tts")
+            book.setTtsEngine("legacy-book-engine")
+            field.set(null, book)
+            val settings = org.koin.core.context.GlobalContext.get().get<ReadAloudSettingsGateway>()
+            settings.update { it.copy(ttsEngine = "global-engine") }
+            assertEquals("global-engine", ReadAloud.ttsEngine)
+            settings.update { it.copy(ttsEngine = "new-engine") }
+            assertEquals("new-engine", ReadAloud.ttsEngine)
+        } finally { field.set(null, previous) }
+    }
+
+    @Test
     fun stopFromExternalCapsuleDoesNotStartAnotherForegroundService() {
         val context = RecordingContext(RuntimeEnvironment.getApplication())
 

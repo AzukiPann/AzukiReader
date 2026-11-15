@@ -44,7 +44,8 @@ object ReadAloud {
     private var aloudClass: Class<*>
         get() = selectedAloudClass ?: getReadAloudClass().also { selectedAloudClass = it }
         set(value) { selectedAloudClass = value }
-    val ttsEngine get() = (bookSession.book ?: ReadBook.book)?.getTtsEngine() ?: aloudSettingsGateway.currentSettings.ttsEngine
+    // Both settings entry points select one application-wide narrator engine.
+    val ttsEngine get() = aloudSettingsGateway.currentSettings.ttsEngine
     var httpTTS: HttpTTS? = null
     var coordinatorDefaultEngineType: String = ReadAloudVoice.ENGINE_SYSTEM
         private set
@@ -68,7 +69,8 @@ object ReadAloud {
         get() = GSON.fromJsonObject<ReadAloudEngineSelection>(ttsEngine).getOrNull()
             ?.engineId?.startsWith("wenku8-") == true
 
-    private fun getReadAloudClass(): Class<*> {        val ttsEngine = ttsEngine
+    private fun getReadAloudClass(): Class<*> {
+        val ttsEngine = ttsEngine
         GSON.fromJsonObject<ReadAloudEngineSelection>(ttsEngine).getOrNull()
             ?.takeIf { it.engineType == ReadAloudVoice.ENGINE_CLOUD }
             ?.let { selection ->

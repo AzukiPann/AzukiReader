@@ -69,17 +69,13 @@ class Wenku8ListeningPanelTest {
         }
         compose.onNodeWithTag("listening-panel").performScrollToNode(hasTestTag("listening-voice-picker"))
         compose.onNodeWithTag("listening-voice-picker").performClick()
-        compose.onNode(hasText("晓晓 · 中文女声") and isSelectable()).assertIsSelected().performClick()
+        compose.onNode(hasText("晓晓 · 中文女声 · edge") and isSelectable()).assertIsSelected().performClick()
         compose.runOnIdle { assertEquals(ListeningIntent.Voice("voice"),intents.last()) }
-        compose.onNodeWithTag("listening-panel").performScrollToNode(hasText("系统离线"))
-        compose.onNodeWithText("系统离线").performClick()
-        compose.runOnIdle {
-            assertEquals(ListeningIntent.Source("system"),intents.last())
-            state=state.copy(playback=state.playback.copy(source="system",voices=persistentListOf()))
-        }
-        compose.onNodeWithTag("listening-panel").performScrollToNode(hasText("离线引擎与音色设置"))
-        compose.onNodeWithText("离线引擎与音色设置").performClick()
+        compose.onNodeWithTag("listening-panel").performScrollToNode(hasTestTag("listening-manage-voices"))
+        compose.onNodeWithTag("listening-manage-voices").performClick()
         compose.runOnIdle { assertEquals(1,offlineSettings) }
+        compose.onNodeWithText("自定义").assertDoesNotExist()
+
     }
     @Test fun embeddedSettingsHaveOneHostTitleAndExposeSleepAndFollowActions() {
         val intents=mutableListOf<ListeningIntent>()
@@ -94,9 +90,7 @@ class Wenku8ListeningPanelTest {
             }
         }
         compose.onNodeWithText("朗读设置").assertDoesNotExist()
-        compose.onNodeWithTag("listening-panel").performScrollToNode(hasText("系统离线"))
-        compose.onNodeWithText("自定义").performClick()
-        compose.runOnIdle { assertEquals(ListeningIntent.Source("custom"),intents.last()) }
+        compose.onNodeWithText("自定义").assertDoesNotExist()
         compose.onNodeWithTag("listening-panel").performScrollToNode(hasContentDescription("跟随朗读段落"))
         compose.onNodeWithContentDescription("跟随朗读段落").performClick()
         compose.runOnIdle { assertEquals(ListeningIntent.Follow(false),intents.last()) }

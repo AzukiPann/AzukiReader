@@ -86,6 +86,7 @@ data class TtsManagedEngineItemUi(
     val summary: String,
     val deletable: Boolean,
     val editable: Boolean,
+    val selected: Boolean = false,
 )
 @Stable data class TtsEngineOptionUi(
     val engineType: String,
@@ -147,6 +148,8 @@ sealed interface CloudTtsIntent {
     data class AddVoiceForEngine(val engineType: String, val engineId: String) : CloudTtsIntent
     data class EditEngine(val id: String) : CloudTtsIntent
     data class DeleteEngine(val id: String) : CloudTtsIntent
+    data object ConfirmDeleteEngine : CloudTtsIntent
+    data class UseVoice(val id: String) : CloudTtsIntent
     data class SetDefaultEngine(val engineType: String, val engineId: String) : CloudTtsIntent
     data object ApplyDefaultEngineGlobally : CloudTtsIntent
     data object ApplyDefaultEngineForBook : CloudTtsIntent
@@ -216,6 +219,7 @@ sealed interface CloudTtsEffect {
 }
 
 sealed interface CloudTtsDialog {
+    data class DeleteEngine(val id: String, val title: String, val http: Boolean) : CloudTtsDialog
     data class Error(val message: String) : CloudTtsDialog
     data class DeleteVoice(val id: String, val title: String) : CloudTtsDialog
     /** 批量删除确认：[count] 只用于文案，真正删的是 [ids]。 */
