@@ -11,8 +11,6 @@
 
 ## 界面示意
 
-用户提供的界面截图，分别展示立体书架和阅读设置；图片中的书籍与正文仅用于界面示意。
-
 <p align="center">
   <img src="docs/images/azukireader-preview-01.jpg" width="320" alt="AzukiReader 立体书架、书籍列表和底部导航示意" />
   <img src="docs/images/azukireader-preview-02.jpg" width="320" alt="AzukiReader 浅绿背景、楷体正文和阅读设置示意" />
