@@ -52,6 +52,7 @@ data class ContentQualityUiState(
 data class SearchUiState(
     val query: String = "",
     val committedQuery: String = "",
+    val searchGeneration: Long = 0,
     val results: ImmutableList<SearchResultItemUi> = persistentListOf(),
     val history: ImmutableList<SearchKeyword> = persistentListOf(),
     val bookshelfHints: ImmutableList<BookShelfItem> = persistentListOf(),

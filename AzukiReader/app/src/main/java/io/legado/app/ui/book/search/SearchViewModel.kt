@@ -592,6 +592,9 @@ class SearchViewModel(
         _uiState.update {
             it.copy(
                 committedQuery = keyword,
+                searchGeneration = it.searchGeneration + 1,
+                savedScrollIndex = 0,
+                savedScrollOffset = 0,
                 results = persistentListOf(),
                 isManualStop = false,
                 hasMore = true,

@@ -162,10 +162,14 @@ fun SearchScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var queryInput by rememberSaveable { mutableStateOf(state.query) }
     var ignoreNextDebouncedQuery by rememberSaveable { mutableStateOf<String?>(null) }
-    var keepResultsPinnedToTop by rememberSaveable { mutableStateOf(true) }
+    var previousCommittedQuery by rememberSaveable { mutableStateOf(state.committedQuery) }
+    var previousSearchGeneration by rememberSaveable { mutableStateOf(state.searchGeneration) }
+    var keepResultsAtTop by rememberSaveable { mutableStateOf(true) }
     val showSuggestionPanel = state.showSuggestions
     val latestQuery by rememberUpdatedState(state.query)
-    val scrollBehavior = when (LegadoTheme.composeEngine) {
+    // The fixed archive header never sets a collapsing height limit. Attaching an
+    // enter-always connection would consume upward drags before the list sees them.
+    val scrollBehavior = if (LegadoTheme.isWenku8) null else when (LegadoTheme.composeEngine) {
         ComposeEngine.Miuix, ComposeEngine.Coui -> {
             GlassTopAppBarDefaults.defaultScrollBehavior()
         }
@@ -259,39 +263,39 @@ fun SearchScreen(
         val idx = state.savedScrollIndex
         val off = state.savedScrollOffset
         if (idx > 0 || off > 0) {
+            keepResultsAtTop = false
             listState.scrollToItem(idx, off)
             onIntent(SearchIntent.SaveScrollState(0, 0))
         }
     }
 
-    LaunchedEffect(state.committedQuery) {
-        keepResultsPinnedToTop = true
-    }
-
-    LaunchedEffect(isSourceGroupedMode, listState, groupedListState) {
-        snapshotFlow {
-            val activeState = if (isSourceGroupedMode) groupedListState else listState
-            Triple(
-                activeState.firstVisibleItemIndex,
-                activeState.firstVisibleItemScrollOffset,
-                activeState.isScrollInProgress
-            )
-        }.collect { (index, offset, isScrollInProgress) ->
-            if (index == 0 && offset == 0) {
-                keepResultsPinnedToTop = true
-            } else if (isScrollInProgress) {
-                keepResultsPinnedToTop = false
-            }
+    LaunchedEffect(state.committedQuery, state.searchGeneration) {
+        // A repeated keyword is also a new search; loading another page isn't.
+        if (previousCommittedQuery != state.committedQuery ||
+            previousSearchGeneration != state.searchGeneration) {
+            previousCommittedQuery = state.committedQuery
+            previousSearchGeneration = state.searchGeneration
+            keepResultsAtTop = true
+            // The inactive layout is not measured: don't await its first layout
+            // before resetting the visible list.
+            listState.requestScrollToItem(0)
+            groupedListState.requestScrollToItem(0)
         }
     }
 
-    val firstResultKey = state.results.firstOrNull()?.let {
-        "${it.book.origin}:${it.book.bookUrl}"
+    LaunchedEffect(listState, groupedListState) {
+        snapshotFlow { listState.isScrollInProgress || groupedListState.isScrollInProgress }
+            .collect { scrolling ->
+                if (scrolling) keepResultsAtTop = false
+            }
     }
-    LaunchedEffect(firstResultKey, state.results.size, state.isSearching) {
-        if (state.isSearching && keepResultsPinnedToTop && state.results.isNotEmpty()) {
-            listState.scrollToItem(0)
-            groupedListState.scrollToItem(0)
+
+    LaunchedEffect(state.results, keepResultsAtTop) {
+        // Stable item keys otherwise anchor the old first book when higher-priority
+        // results are inserted before it. Stop pinning as soon as browsing starts.
+        if (keepResultsAtTop && state.savedScrollIndex == 0 && state.savedScrollOffset == 0) {
+            listState.requestScrollToItem(0)
+            groupedListState.requestScrollToItem(0)
         }
     }
 
@@ -317,7 +321,7 @@ fun SearchScreen(
 
     io.legado.app.core.designsystem.wenku8.effects.Wenku8RevealScope(state.committedQuery, ready = state.results.isNotEmpty()) {
     AppScaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = scrollBehavior?.let { Modifier.nestedScroll(it.nestedScrollConnection) } ?: Modifier,
         topBar = {
             Column {
                 GlassMediumFlexibleTopAppBar(
